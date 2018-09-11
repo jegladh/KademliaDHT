@@ -1,7 +1,7 @@
 package main
 
 import (
-	kademlia "Kademlia/Kademlia2018/Lab"
+	kademlia "Kademlia/KademliaDHT/Lab"
 	"fmt"
 	"strconv"
 	/*"net"
