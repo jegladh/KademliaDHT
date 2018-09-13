@@ -1,6 +1,8 @@
 package d7024e
 
 type Kademlia struct {
+	//routes    *RoutingTable
+	//NetworkID string
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
