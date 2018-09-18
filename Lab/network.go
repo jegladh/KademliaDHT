@@ -9,6 +9,18 @@ import (
 )
 
 type Network struct {
+	//nodeid int
+	//source string
+	//port   int
+}
+type MockNetwork struct {
+}
+type neetwork interface {
+	SendFindContactMessage(contact *Contact, dest *Contact) []Contact
+	SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte)
+	SendStoreMessage(data []byte)
+	//LookupContact()
+	//LookupContactThreads()
 }
 
 func ErrorHandler(err error) {
@@ -39,7 +51,7 @@ func Listen(ip string, port int) {
 
 //http://130.240.110.178:8000/
 func Ping() {
-	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:9999")
+	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
 	ErrorHandler(err)
 	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
 	ErrorHandler(err)
@@ -63,15 +75,50 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	// TODO
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
-	// TODO
-	//if succes kademlia.LookupContact()
+func (network *MockNetwork) SendFindContactMessage(contact *Contact, dest *Contact) []Contact {
+	var a []Contact
+	fmt.Println("I am sending ContatcMsg now")
+	for i := 0; i < 5; i++ {
+		newcontact := NewContact(NewRandomKademliaID(), "localhost")
+		newcontact.CalcDistance(contact.ID)
+		a = append(a, newcontact)
+	}
+	return a
 }
+
+func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) {
+	// TODO
+	//if success
+	//kademlia.LookupContact()
+}
+
+func (network *MockNetwork) SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte) {
+	fmt.Println("I am sending DataMsg now")
+	/*if hash == "FFFF" && contact.ID.String() == "rwdfvwsv" {
+	return _, _
+	*/
+	return nil, nil
+}
+
+// var s []byte
+// fmt.Println(" I am sending DataMsg now")
+// for i := 0; i < 5; i++ {
+// 	*newdata := NewContact(NewRandomKademliaID(), "localhost")
+//
+// }
+// return &newdata, s
 
 func (network *Network) SendFindDataMessage(hash string) {
 	// TODO
+	//if success
+	//kademlia.LookupData()
+}
+func (network *MockNetwork) SendStoreMessage(data []byte) {
+	//TODO
 }
 
 func (network *Network) SendStoreMessage(data []byte) {
 	// TODO
+	//if success
+	//kademlia.Store(data)
 }
