@@ -9,6 +9,8 @@ import (
 )
 
 type Network struct {
+	address string
+	port    string
 	//nodeid int
 	//source string
 	//port   int
@@ -30,17 +32,17 @@ func ErrorHandler(err error) {
 	}
 }
 
-func Listen(ip string, port int) {
+func Listen(network *Network) {
 	/*convert port to string*/
-	portstr := strconv.Itoa(port)
+	//portstr := strconv.Itoa(port)
 	/**/
-	serveraddr, err := net.ResolveUDPAddr("udp", ip+":"+portstr)
+	serveraddr, err := net.ResolveUDPAddr("udp", network.address+":"+network.port)
 	ErrorHandler(err)
 	/*listen at port*/
 	listener, err := net.ListenUDP("udp", serveraddr)
 	ErrorHandler(err)
 	defer listener.Close()
-	fmt.Println("Listening on " + ip + ":" + portstr)
+	fmt.Println("Listening on " + network.address + ":" + network.port)
 	buf := make([]byte, 1024)
 	for {
 		n, conn, err := listener.ReadFromUDP(buf)
@@ -51,7 +53,7 @@ func Listen(ip string, port int) {
 
 //http://130.240.110.178:8000/
 func Ping() {
-	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
+	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000") //contact.address?
 	ErrorHandler(err)
 	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
 	ErrorHandler(err)
@@ -87,7 +89,13 @@ func (network *MockNetwork) SendFindContactMessage(contact *Contact, dest *Conta
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) {
-	// TODO
+	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000") //contact.Address?
+	ErrorHandler(err)
+	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
+	ErrorHandler(err)
+	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
+	ErrorHandler(err)
+	defer Conn.Close()
 	//if success
 	//kademlia.LookupContact()
 }
@@ -109,7 +117,13 @@ func (network *MockNetwork) SendFindDataMessage(hash string, contact *Contact) (
 // return &newdata, s
 
 func (network *Network) SendFindDataMessage(hash string) {
-	// TODO
+	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
+	ErrorHandler(err)
+	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
+	ErrorHandler(err)
+	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
+	ErrorHandler(err)
+	defer Conn.Close()
 	//if success
 	//kademlia.LookupData()
 }
