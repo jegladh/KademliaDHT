@@ -1,9 +1,10 @@
 package main
 
 import (
-	kademlia "Kademlia/KademliaDHT/Lab"
 	"fmt"
 	"strconv"
+
+	kademlia "github.com/KademliaDHT/Lab"
 	/*"net"
 	"github.com/tatsushid/go-fastping"
 	"os"
@@ -14,7 +15,7 @@ var port int
 
 func main() {
 
-	port := 8000
+	port := 8001
 	portstr := strconv.Itoa(port)
 	//kademlia.Listen("localhost", port)
 	kademlia.Ping()

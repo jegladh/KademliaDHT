@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+	//för proto
+	//för protobuf
 )
 
 type Network struct {
@@ -51,7 +53,7 @@ func Listen(ip string, port int) {
 
 //http://130.240.110.178:8000/
 func Ping() {
-	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
+	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8001")
 	ErrorHandler(err)
 	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
 	ErrorHandler(err)

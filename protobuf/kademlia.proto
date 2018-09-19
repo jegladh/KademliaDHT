@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+package protobuf;
+
+message KademliaMessageRequest {
+    enum Type{
+          PING = 0;
+    }
+      required string lable = 1;
+      optional int32 type = 2 [default=77];
+      repeated int64 reps = 3;
+}
+
+message KademliaMessageResponse {
+  enum Type{
+      PONG = 0;
+  }
+      required string lable = 1;
+      required string senderid = 2;
+      required string senderAddress = 3;
+}
+
+//protoc --go_out=. Kademlia.proto
