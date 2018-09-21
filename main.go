@@ -1,20 +1,16 @@
 package main
 
-import (
-	kademlia "Kademlia/KademliaDHT/Lab"
-	"fmt"
-	"strconv"
-	/*"net"
-	"github.com/tatsushid/go-fastping"
-	"os"
-	"time"
-	*/)
-
-var port int
+/*"net"
+"github.com/tatsushid/go-fastping"
+"os"
+"time"
+*/
 
 func main() {
+	//address := "localhost"
+	//port := "8000"
 
-	port := 8000
+	/*port := 8000
 	portstr := strconv.Itoa(port)
 	//kademlia.Listen("localhost", port)
 	kademlia.Ping()
@@ -41,5 +37,5 @@ func main() {
 	//fmt.Println(newRT.GetBucketIndex(kademlia.NewKademliaID("3578")))
 	//fmt.Println(newRT.Buckets[2])
 	//fmt.Println(newKademlia)
-
+	*/
 }

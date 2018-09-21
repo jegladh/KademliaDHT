@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package protobuf;
+
+message KademliaMessageType {
+    enum Type{
+          CALL = 0;
+          CALLBACK = 1;
+    }
+      string lable = 1;
+      int32 type = 2;
+      int64 reps = 3;
+}
+
+message KademliaMessageCall {
+  enum Type{
+      PING = 0;
+  }
+      string lable = 1;
+      string senderid = 2;
+      string senderAddress = 3;
+}
+message KademliaMessageCallBack {
+  enum Type{
+      PING = 0;
+  }
+      string lable = 1;
+      string senderid = 2;
+      string senderAddress = 3;
+}
+
+//protoc --go_out=. Kademlia.proto
