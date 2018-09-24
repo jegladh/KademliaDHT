@@ -50,7 +50,7 @@ func (network *Network) Listen() {
 		fmt.Println("Received ", string(buf[0:n]), " from ", conn)
 		ErrorHandler(err)
 
-		var receivedMsg *protobuf.KademliaMessageRequest = &protobuf.KademliaMessageRequest{}
+		var receivedMsg *protobuf.Kad = &protobuf.KademliaMessageRequest{}
 		err = proto.Unmarshal(buf[:n], receivedMsg)
 
 		ErrorHandler(err)
@@ -104,6 +104,22 @@ func (network *Network) SendPongMessage(receivedMsg protobuf.KademliaMessageRequ
 
 }
 
+func (network *Network) newMessage(typ messages.Message_Type) messages.Message {
+	var msg messages.Message = messages.Message{}
+	msg.Type = typ
+	var me messages.Contact = messages.Contact{fmt.Sprint(network.kad.rt.me.ID), network.address + ":" + network.port, ""}
+	msg.Sender = &me
+	return msg
+}
+
+func (network *Network) newResponseMessage() protobuf.KademliaMessageType {
+	return network.newMessage(protobuf.KademliaMessageType_CALLBACK)
+}
+
+func (network *Network) newRequestMessage() protobuf.KademliaMessageType {
+	return network.newMessage(protobuf.KademliaMessageType_CALL)
+}
+
 func (network *Network) SendPingMessage(contact *Contact) {
 	ServerAddr, err := net.ResolveUDPAddr("udp", contact.Address) //contact.address?
 	ErrorHandler(err)
@@ -113,8 +129,8 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	ErrorHandler(err)
 	defer Conn.Close()
 
-	var msg messages.Message = network.newRequestMessage()
-	var mID int64 = network.getMessageID()
+	var msg protobuf.KademliaMessageType_Type = protobuf.KademliaMessageType_CALL
+	//var mID int64 = network.getMessageID()
 	var ping messages.Request = messages.Request{mID, messages.Request_PING, "", nil}
 	msg.Request = &ping
 
@@ -126,16 +142,6 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	if err != nil {
 		fmt.Println(msg, err)
 	}
-	var response *messages.Response = network.getResponse(mID)
-	if response == nil {
-		return false
-	}
-	//fmt.Printf("ID should be %v, is %v, type %v\n", mID, response.MessageID, response.Type)
-	//fmt.Println(response)
-	if response.MessageID == mID && response.Type == messages.Response_PING {
-		return true
-	}
-	return false
 
 }
 
