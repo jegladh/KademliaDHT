@@ -7,26 +7,35 @@ message KademliaMessageType {
           CALL = 0;
           CALLBACK = 1;
     }
-      string lable = 1;
-      int32 type = 2;
-      int64 reps = 3;
+      Type type = 1;
+      contact senderC = 2;
+      KademliaMessageCall Call = 3;
+      KademliaMessageCallBack Callback = 4;
+
 }
 
 message KademliaMessageCall {
   enum Type{
       PING = 0;
   }
-      string lable = 1;
-      string senderid = 2;
-      string senderAddress = 3;
+      int32 id = 1;
+      Type type = 2;
+      string messageString = 3;
+      string info = 4;
 }
 message KademliaMessageCallBack {
   enum Type{
       PING = 0;
   }
-      string lable = 1;
-      string senderid = 2;
-      string senderAddress = 3;
+      int32 id = 1;
+      Type type = 2;
+      string messageString = 3;
+      string info = 4;
+}
+message contact {
+  string contactID = 1;
+  string address = 2;
+  string xor = 3;
 }
 
 //protoc --go_out=. Kademlia.proto

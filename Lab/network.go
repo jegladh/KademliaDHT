@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -12,6 +13,9 @@ import (
 type Network struct {
 	address string
 	port    string
+	mid     int32
+	netKad  *Kademlia
+	lock    *sync.Mutex
 }
 type MockNetwork struct {
 }
@@ -27,6 +31,14 @@ type neetwork interface {
 func NewNetwork(address string, port string) Network {
 
 }*/
+
+func (network *Network) getMessageID() int32 {
+	network.lock.Lock()
+	ID := network.mid
+	network.mid++
+	network.lock.Unlock()
+	return ID
+}
 
 func ErrorHandler(err error) {
 	if err != nil {
@@ -50,12 +62,12 @@ func (network *Network) Listen() {
 		fmt.Println("Received ", string(buf[0:n]), " from ", conn)
 		ErrorHandler(err)
 
-		var receivedMsg *protobuf.Kad = &protobuf.KademliaMessageRequest{}
+		var receivedMsg *protobuf.KademliaMessageCall = &protobuf.KademliaMessageCall{}
 		err = proto.Unmarshal(buf[:n], receivedMsg)
 
 		ErrorHandler(err)
-		/*
-			if receivedMsg.Type == protobuf.KademliaMessageResponse{
+
+			if receivedMsg.Type == protobuf.{
 
 			}
 			if receivedMsg.Type == protobuf.KademliaMessageRequest{
@@ -95,7 +107,7 @@ func Ping() {
 		time.Sleep(time.Second * 1)
 	}
 }*/
-func (network *Network) SendPongMessage(receivedMsg protobuf.KademliaMessageRequest) {
+func (network *Network) SendPongMessage(receivedMsg protobuf.KademliaMessageCall) {
 	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000") //contact.address?
 	ErrorHandler(err)
 	Conn, err := net.DialUDP("udp", nil, ServerAddr)
@@ -104,11 +116,11 @@ func (network *Network) SendPongMessage(receivedMsg protobuf.KademliaMessageRequ
 
 }
 
-func (network *Network) newMessage(typ messages.Message_Type) messages.Message {
-	var msg messages.Message = messages.Message{}
+func (network *Network) newMessage(typ protobuf.KademliaMessageType_Type) protobuf.KademliaMessageType {
+	var msg protobuf.KademliaMessageType = protobuf.KademliaMessageType{}
 	msg.Type = typ
-	var me messages.Contact = messages.Contact{fmt.Sprint(network.kad.rt.me.ID), network.address + ":" + network.port, ""}
-	msg.Sender = &me
+	//var me messages.Contact = messages.Contact{fmt.Sprint(network.kad.rt.me.ID), network.address + ":" + network.port, ""}
+	//msg.Sender = &me
 	return msg
 }
 
@@ -129,14 +141,19 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	ErrorHandler(err)
 	defer Conn.Close()
 
-	var msg protobuf.KademliaMessageType_Type = protobuf.KademliaMessageType_CALL
-	//var mID int64 = network.getMessageID()
-	var ping messages.Request = messages.Request{mID, messages.Request_PING, "", nil}
-	msg.Request = &ping
+	var msg protobuf.KademliaMessageType = network.newRequestMessage()
+	mid := network.getMessageID()
+	ping := protobuf.KademliaMessageCall{
+		Id:            mid,
+		Type:          protobuf.KademliaMessageCall_PING,
+		MessageString: "a",
+		Info:          "a",
+	}
+	msg.Call = &ping
 
 	var buff []byte
 	buff, err = proto.Marshal(&msg)
-	CheckError(err)
+	ErrorHandler(err)
 	_, err = Conn.Write(buff)
 	//fmt.Printf("wrote %d bytes\n", n)
 	if err != nil {
