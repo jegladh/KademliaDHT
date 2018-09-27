@@ -3,6 +3,8 @@ package main
 import (
 	kademlia "Kademlia/KademliaDHT/Lab"
 	"fmt"
+	"sync"
+	"time"
 	//	"strconv"
 	/*"net"
 	"github.com/tatsushid/go-fastping"
@@ -12,12 +14,27 @@ import (
 
 func main() {
 
-	net := kademlia.Network{}
+	//net := new(kademlia.Network)
+
+	//	net.Listen()
 	fmt.Println("Starting server")
 	//net.Listen()
+
 	randomID := kademlia.NewRandomKademliaID()
 	contact := kademlia.NewContact(randomID, "localhost:"+"8000")
+	rt := kademlia.NewRoutingTable(contact)
+	kad := kademlia.NewKademlia(&contact, rt)
+	net := kademlia.Network{
+		Address: "localhost",
+		Port:    "8000",
+		Mid:     123,
+		NetKad:  kad,
+		Lock:    &sync.Mutex{},
+	}
+	go net.Listen()
+	<-time.After(time.Second * 1)
 	net.SendPingMessage(&contact)
+	<-time.After(time.Second * 1)
 
 	/*port := 8000
 	portstr := strconv.Itoa(port)
