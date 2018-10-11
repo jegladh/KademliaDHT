@@ -31,8 +31,9 @@ message KademliaMessageCallBack {
   }
       int32 id = 1;
       Type type = 2;
-      string messageString = 3;
+      contact contacts = 3;
       string info = 4;
+      repeated contact coontactList = 5;
 }
 message contact {
   string contactID = 1;

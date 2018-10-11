@@ -10,6 +10,21 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+type NetInterface interface {
+	SendPingMessage(contact *Contact)
+	SendFindContactMessage(contact *Contact, dest *Contact) CloseContacts
+
+	//	SendFindDataMessage(contact *Contact, hash string) (*CloseContacts, *[]byte)
+	//	SendStoreMessage(contact *Contact, hash string, data []byte)
+}
+
+// type CloseContact struct {
+// 	contact  *Contact
+// 	distance *KademliaID
+// }
+
+type CloseContacts []Contact
+
 type Network struct {
 	Address string
 	Port    string
@@ -77,13 +92,15 @@ func (network *Network) Listen() {
 		//fmt.Println(receivedMsg)
 		fmt.Println("What type am I: ", receivedMsg.Type)
 		if receivedMsg.Type == protobuf.KademliaMessageType_CALLBACK {
-			fmt.Println(receivedMsg.Callback.GetMessageString())
+			fmt.Println(receivedMsg.Callback.GetInfo())
 		} else if receivedMsg.Type == protobuf.KademliaMessageType_CALL {
 
 			switch receivedMsg.Call.Type {
 			case protobuf.KademliaMessageCall_PING:
 				go network.callbackPingMessage(*receivedMsg)
 				break
+			case protobuf.KademliaMessageCall_FINDC:
+				go network.callbackFindContactMessage(*receivedMsg)
 			default:
 				fmt.Println("Error")
 			}
@@ -155,10 +172,10 @@ func (network *Network) callbackPingMessage(receivedMsg protobuf.KademliaMessage
 	var msg protobuf.KademliaMessageType = network.newResponseMessage()
 
 	var ping protobuf.KademliaMessageCallBack = protobuf.KademliaMessageCallBack{
-		Id:            receivedMsg.Call.Id,
-		Type:          protobuf.KademliaMessageCallBack_PING,
-		MessageString: "Pong",
-		Info:          "",
+		Id:       receivedMsg.Call.Id,
+		Type:     protobuf.KademliaMessageCallBack_PING,
+		Contacts: nil,
+		Info:     "Hello",
 	}
 	msg.Callback = &ping
 	fmt.Println(ping)
@@ -205,23 +222,23 @@ func (network *Network) SendPingMessage(contact *Contact) {
 
 }
 
-func (network *MockNetwork) SendFindContactMessage(contact *Contact, dest *Contact) []Contact {
-	var a []Contact
-	fmt.Println("I am sending ContatcMsg now")
-	for i := 0; i < 5; i++ {
-		newcontact := NewContact(NewRandomKademliaID(), "localhost")
-		newcontact.CalcDistance(contact.ID)
-		a = append(a, newcontact)
-	}
-	return a
-}
+// func (network *MockNetwork) SendFindContactMessage(contact *Contact, dest *Contact) []Contact {
+// var a []Contact
+// fmt.Println("I am sending ContatcMsg now")
+// for i := 0; i < 5; i++ {
+// newcontact := NewContact(NewRandomKademliaID(), "localhost")
+// newcontact.CalcDistance(contact.ID)
+// a = append(a, newcontact)
+// }
+// return a
+// }
 
-func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) {
-	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000") //contact.Address?
+func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) CloseContacts {
+	ServerAddr, err := net.ResolveUDPAddr("udp", contact.Address) //contact.Address?
 	ErrorHandler(err)
-	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
+	//	LocalAddr, err := net.ResolveUDPAddr("udp", nil, ServerAddr)
 	ErrorHandler(err)
-	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
+	Conn, err := net.DialUDP("udp", nil, ServerAddr)
 	ErrorHandler(err)
 	defer Conn.Close()
 
@@ -230,19 +247,63 @@ func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) 
 	msg.Call = &protobuf.KademliaMessageCall{
 		Id:            mid,
 		Type:          protobuf.KademliaMessageCall_FINDC,
-		MessageString: "",
+		MessageString: fmt.Sprint(dest),
 		Info:          "",
 	}
+	var buff []byte
+	buff, err = proto.Marshal(&msg)
+	ErrorHandler(err)
+	_, err = Conn.Write(buff)
+	if err != nil {
+		fmt.Println(msg, err)
+	}
 
+	return nil
 }
 
-func (network *MockNetwork) SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte) {
-	fmt.Println("I am sending DataMsg now")
-	/*if hash == "FFFF" && contact.ID.String() == "rwdfvwsv" {
-	return _, _
-	*/
-	return nil, nil
+//MUST REDO PROTOFILE WITH LIST OF CONTACTS
+
+func (network *Network) callbackFindContactMessage(receievedMsg protobuf.KademliaMessageType) {
+	//first we must list all closestcontacts that the node knows about
+	var cc CloseContacts = network.NetKad.RT.FindClosestContacts(NewKademliaID(receievedMsg.Call.MessageString), k)
+	var msg protobuf.KademliaMessageType = network.newResponseMessage()
+	var callback protobuf.KademliaMessageCallBack = protobuf.KademliaMessageCallBack{}
+	var clist []*protobuf.Contact = []*protobuf.Contact{}
+	callback.Type = protobuf.KademliaMessageCallBack_FINDC
+
+	for i := 0; i < len(cc); i++ {
+		var cont protobuf.Contact = protobuf.Contact{
+			ContactID: fmt.Sprint(cc[i].ID),
+			Address:   cc[i].Address,
+			Xor:       fmt.Sprint(cc[i].distance),
+		}
+
+		callback.CoontactList = append(clist, &cont)
+	}
+	callback.Id = receievedMsg.Call.Id
+	msg.Callback = &callback
+	// var buffer []byte
+	// var err error
+	buffer, err := proto.Marshal(&msg)
+	fmt.Println(buffer)
+	ErrorHandler(err)
+
+	ServerAddr, err := net.ResolveUDPAddr("udp", receievedMsg.SenderC.Address) //contact.Address?
+	ErrorHandler(err)
+	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
+	ErrorHandler(err)
+	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
+	ErrorHandler(err)
+	defer Conn.Close()
 }
+
+// func (network *MockNetwork) SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte) {
+// 	fmt.Println("I am sending DataMsg now")
+// 	/*if hash == "FFFF" && contact.ID.String() == "rwdfvwsv" {
+// 	return _, _
+// 	*/
+// 	return nil, nil
+// }
 
 // var s []byte
 // fmt.Println(" I am sending DataMsg now")
@@ -260,8 +321,7 @@ func (network *Network) SendFindDataMessage(hash string) {
 	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
 	ErrorHandler(err)
 	defer Conn.Close()
-	//if success
-	//kademlia.LookupData()
+
 }
 func (network *MockNetwork) SendStoreMessage(data []byte) {
 	//TODO

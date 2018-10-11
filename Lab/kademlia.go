@@ -23,7 +23,7 @@ func NewKademlia(me *Contact, rt *RoutingTable) *Kademlia {
 	return kademlia
 }
 
-var neet neetwork = &MockNetwork{}
+//var neet neetwork = &MockNetwork{}
 
 //Functions for sorting
 func (c Contacts) Len() int {
