@@ -23,29 +23,75 @@ type NetInterface interface {
 // 	distance *KademliaID
 // }
 
+//List of the closecontacts fro sendfindnode
 type CloseContacts []Contact
 
+//List of responses
+type Respons []protobuf.KademliaMessageCallBack
+
+//var Kandidater ContactCandidates
+
 type Network struct {
-	Address string
-	Port    string
-	Mid     int32
-	NetKad  *Kademlia
-	Lock    *sync.Mutex
+	Address     string
+	Port        string
+	Mid         int32
+	NetKad      *Kademlia
+	Lock        *sync.Mutex
+	AnsList     *Respons
+	NetworkLock *sync.Cond
+	MailinBox   *bool
 }
 type MockNetwork struct {
 }
-type neetwork interface {
-	SendFindContactMessage(contact *Contact, dest *Contact) []Contact
-	SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte)
-	SendStoreMessage(data []byte)
-	//LookupContact()
-	//LookupContactThreads()
-}
+
+// type neetwork interface {
+// 	SendFindContactMessage(contact *Contact, dest *Contact) []Contact
+// 	SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte)
+// 	SendStoreMessage(data []byte)
+// 	//LookupContact()
+// 	//LookupContactThreads()
+// }
 
 /*
 func NewNetwork(address string, port string) Network {
+}
+*/
 
-}*/
+func (network *Network) getResponse(ID int32) *protobuf.KademliaMessageCallBack {
+
+	//	var start time.Time = time.Now()
+
+	network.NetworkLock.L.Lock()
+	for !*network.MailinBox {
+
+		network.NetworkLock.Wait()
+	}
+	for i := 0; i < len(*network.AnsList); i++ {
+		if (*network.AnsList)[i].Id == ID {
+			a := (*network.AnsList)[i]
+			*network.AnsList = append((*network.AnsList)[:i], (*network.AnsList)[i+1:]...)
+			if len(*network.AnsList) == 0 {
+				*network.MailinBox = false
+			}
+			network.NetworkLock.L.Unlock()
+			return &a
+		}
+
+		network.NetworkLock.L.Unlock()
+	}
+	return nil
+}
+
+func (network *Network) addResponse(response protobuf.KademliaMessageCallBack) {
+	//network.responseCond.L.Lock()
+	network.NetworkLock.L.Lock()
+
+	//fmt.Println("Twerk. Adding ID ", response.MessageID)
+	*network.AnsList = append(*network.AnsList, response)
+	*network.MailinBox = true
+	network.NetworkLock.Broadcast()
+	network.NetworkLock.L.Unlock()
+}
 
 func NewNetwork(address string, port string, kad *Kademlia) Network {
 	a := Network{Address: address, Port: port, Mid: 1, NetKad: kad, Lock: &sync.Mutex{}}
@@ -92,7 +138,15 @@ func (network *Network) Listen() {
 		//fmt.Println(receivedMsg)
 		fmt.Println("What type am I: ", receivedMsg.Type)
 		if receivedMsg.Type == protobuf.KademliaMessageType_CALLBACK {
-			fmt.Println(receivedMsg.Callback.GetInfo())
+			switch receivedMsg.Callback.Type {
+			case protobuf.KademliaMessageCallBack_FINDC:
+				go network.callbackFindReply(receivedMsg)
+				break
+
+			default:
+				fmt.Println("")
+			}
+			//fmt.Println(receivedMsg.Callback.GetInfo())
 		} else if receivedMsg.Type == protobuf.KademliaMessageType_CALL {
 
 			switch receivedMsg.Call.Type {
@@ -233,7 +287,7 @@ func (network *Network) SendPingMessage(contact *Contact) {
 // return a
 // }
 
-func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) CloseContacts {
+func (network *Network) SendFindContactMessage(contact *Contact) CloseContacts {
 	ServerAddr, err := net.ResolveUDPAddr("udp", contact.Address) //contact.Address?
 	ErrorHandler(err)
 	//	LocalAddr, err := net.ResolveUDPAddr("udp", nil, ServerAddr)
@@ -247,24 +301,29 @@ func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) 
 	msg.Call = &protobuf.KademliaMessageCall{
 		Id:            mid,
 		Type:          protobuf.KademliaMessageCall_FINDC,
-		MessageString: fmt.Sprint(dest),
+		MessageString: fmt.Sprint(contact),
 		Info:          "",
 	}
 	var buff []byte
 	buff, err = proto.Marshal(&msg)
 	ErrorHandler(err)
 	_, err = Conn.Write(buff)
-	if err != nil {
-		fmt.Println(msg, err)
-	}
+	// if err != nil {
+	// 	fmt.Println(msg, err)
+	// }
 
-	return nil
+	//ÄNDRAS
+	var resultList CloseContacts
+	// for i := 0; i < len(); i++ {
+	// 	resultList = append(resultList[i], Contact{NewKademliaID()})
+	// }
+
+	return resultList
 }
-
-//MUST REDO PROTOFILE WITH LIST OF CONTACTS
 
 func (network *Network) callbackFindContactMessage(receievedMsg protobuf.KademliaMessageType) {
 	//first we must list all closestcontacts that the node knows about
+
 	var cc CloseContacts = network.NetKad.RT.FindClosestContacts(NewKademliaID(receievedMsg.Call.MessageString), k)
 	var msg protobuf.KademliaMessageType = network.newResponseMessage()
 	var callback protobuf.KademliaMessageCallBack = protobuf.KademliaMessageCallBack{}
@@ -295,6 +354,18 @@ func (network *Network) callbackFindContactMessage(receievedMsg protobuf.Kademli
 	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
 	ErrorHandler(err)
 	defer Conn.Close()
+}
+
+func (network *Network) callbackFindReply(recMsg *protobuf.KademliaMessageType) {
+	replyChan := network.NetKad.Asdf[recMsg.Callback.Thread] // HÄMTA CHANNEL
+	afs := recMsg.Callback.CoontactList
+	var listan []Contact
+	for i := 0; i < len(afs); i++ {
+		listan = append(listan, Contact{ID: NewKademliaID(afs[i].ContactID), Address: afs[i].Address, distance: NewKademliaID(afs[i].Xor)})
+	}
+	whatever := ContactCandidates{listan}
+	// GÖR OM CONTACTS TILL TYPEN ContactCandidates
+	replyChan <- whatever
 }
 
 // func (network *MockNetwork) SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte) {

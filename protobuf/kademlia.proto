@@ -23,6 +23,7 @@ message KademliaMessageCall {
       Type type = 2;
       string messageString = 3;
       string info = 4;
+      int32 thread = 5;
 }
 message KademliaMessageCallBack {
   enum Type{
@@ -34,6 +35,7 @@ message KademliaMessageCallBack {
       contact contacts = 3;
       string info = 4;
       repeated contact coontactList = 5;
+      int32 thread = 6;
 }
 message contact {
   string contactID = 1;
