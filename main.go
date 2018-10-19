@@ -1,9 +1,10 @@
 package main
 
 import (
-	kademlia "Kademlia/KademliaDHT/Lab"
 	"fmt"
 	"strconv"
+
+	kademlia "github.com/KademliaDHT/Lab"
 	/*"net"
 	"github.com/tatsushid/go-fastping"
 	"os"
@@ -19,7 +20,7 @@ func main() {
 	//kademlia.Listen("localhost", port)
 	kademlia.Ping()
 	randomID := kademlia.NewRandomKademliaID()
-	contact := kademlia.NewContact(randomID, "localhost:"+portstr)
+	contact := kademlia.NewContact(randomID, "127.0.0.10"+portstr)
 	newRT := kademlia.NewRoutingTable(contact)
 	newKademlia := kademlia.NewKademlia(&contact, newRT)
 
@@ -29,7 +30,7 @@ func main() {
 	for n := 0; n < 20; n++ {
 		portstr := strconv.Itoa(port)
 		randomID := kademlia.NewRandomKademliaID()
-		newC := kademlia.NewContact(randomID, "localhost:"+portstr)
+		newC := kademlia.NewContact(randomID, "127.0.0.20"+portstr)
 		fmt.Println(newC)
 		newRT.AddContact(newC)
 		port++
