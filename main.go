@@ -33,7 +33,7 @@ func main() {
 	}
 	go net.Listen()
 	<-time.After(time.Second * 1)
-	net.SendFindContactMessage(&contact, &contact)
+	net.SendFindContactMessage(&contact)
 	<-time.After(time.Second * 1)
 
 	/*port := 8000

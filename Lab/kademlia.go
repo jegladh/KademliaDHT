@@ -2,6 +2,7 @@ package d7024e
 
 import (
 	"sync"
+	"time"
 )
 
 //number of "threads"
@@ -15,8 +16,13 @@ type Kademlia struct {
 	mapdemlia       map[string]string
 	Net             *Network
 	wait            *sync.WaitGroup
-	Asdf            map[int32]chan (ContactCandidates)
+	Asdf            map[int32]chan (KadChannel)
 	FindNodeCounter int32
+}
+
+type KadChannel struct {
+	Timestamp time.Time
+	kademlia  ContactCandidates
 }
 
 //type for closest contacts ish
@@ -26,7 +32,8 @@ func NewKademlia(me *Contact, rt *RoutingTable) *Kademlia {
 	kademlia := new(Kademlia)
 	kademlia.RT = rt
 	kademlia.mapdemlia = make(map[string]string)
-	kademlia.Asdf = make(map[int32]chan (ContactCandidates))
+	kademlia.Asdf = make(map[int32]chan (KadChannel))
+
 	kademlia.FindNodeCounter = 1
 	return kademlia
 }
@@ -46,6 +53,7 @@ func (c Contacts) Less(i, j int) bool {
 	return c[i].distance.Less(c[j].distance)
 }
 
+//function to check if a node already has been asked
 func checkAskedNodes(contact Contact, asked []Contact) bool {
 	for _, b := range asked {
 		if contact == b {
@@ -60,10 +68,15 @@ func (kademlia *Kademlia) FindNode(target *Contact) []Contact {
 	resultList := kademlia.RT.FindClosestContacts(target.ID, alpha)
 	returnList := ContactCandidates{resultList}
 	asked := ContactCandidates{}
-	replyChan := make(chan (ContactCandidates))
+	compareList := make([]Contact, 20)
+	replyChan := make(chan (KadChannel))
 	kademlia.Asdf[kademlia.FindNodeCounter] = replyChan
 	kademlia.FindNodeCounter++
 	outboundRequests := 0
+	//map [contact.Address] timer // kan behöva ändra typen i channeln till (address, []contacts)
+
+	exitCounter := 0
+	exitBool := false
 
 	kademlia.wait.Add(alpha)
 	//first alpha requests
@@ -73,23 +86,53 @@ func (kademlia *Kademlia) FindNode(target *Contact) []Contact {
 		asked.Contacts = append(asked.Contacts, resultList[i])
 	}
 	kademlia.wait.Wait()
-	replyList := <-replyChan
-	for _, i := range replyList.Contacts {
-		returnList.Contacts = append(returnList.Contacts, i)
-	}
+	returnList.Sort()
+	// for loop123
+	//for loop still wrong condition
+exit:
+	for true {
+		// snapshot 20 first
+		compareList = returnList.Contacts[:19]
+		replyList := <-replyChan
+		for _, c := range replyList {
+			returnList.Contacts = append(returnList.Contacts, c)
+		}
+		returnList.Sort()
 
-	//Send out more requests and check so no dupe msgs
-	if outboundRequests < 3 {
-	loop1:
-		for _, i := range resultList {
-			if !checkAskedNodes(i, asked.Contacts) {
+		compareCounter := 0
+		for i := 0; i < len(returnList.Contacts); i++ {
+			if compareList[i] == returnList.Contacts[i] {
+				compareCounter++
+			}
+		}
+		if compareCounter == k {
+			exitCounter++
+		} else {
+			exitCounter = 0
+		}
+
+		if exitCounter == 3 {
+			for _, i := range resultList {
 				kademlia.Net.SendFindContactMessage(&i)
-				asked.Contacts = append(asked.Contacts, i)
-				outboundRequests++
-				break loop1
+
+			}
+			break exit
+		}
+		asked.Sort()
+		//Send out more requests and check so no dupe msgs
+		if outboundRequests < 3 && exitBool == true {
+		loop1:
+			for _, i := range resultList {
+				if !checkAskedNodes(i, asked.Contacts) {
+					kademlia.Net.SendFindContactMessage(&i)
+					asked.Contacts = append(asked.Contacts, i)
+					outboundRequests++
+					break loop1
+				}
 			}
 		}
 	}
+	// end loop123
 	returnList.Sort()
 	return returnList.Contacts[0:19]
 
