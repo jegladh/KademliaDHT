@@ -51,9 +51,9 @@ func Listen(ip string, port int) {
 
 //http://130.240.110.178:8000/
 func Ping() {
-	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
+	ServerAddr, err := net.ResolveUDPAddr("udp", "172.19.0.2:62001")
 	ErrorHandler(err)
-	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
+	LocalAddr, err := net.ResolveUDPAddr("udp", "172.19.0.3:62001")
 	ErrorHandler(err)
 	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
 	ErrorHandler(err)
