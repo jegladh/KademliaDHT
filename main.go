@@ -15,7 +15,7 @@ var port int
 
 func main() {
 
-	port := 8000
+	port := 62001
 	portstr := strconv.Itoa(port)
 	//kademlia.Listen("localhost", port)
 	kademlia.Ping()
