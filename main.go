@@ -20,7 +20,7 @@ func main() {
 	//kademlia.Listen("localhost", port)
 	kademlia.Ping()
 	randomID := kademlia.NewRandomKademliaID()
-	contact := kademlia.NewContact(randomID, "127.0.0.10"+portstr)
+	contact := kademlia.NewContact(randomID, "172.19.0.2"+portstr)
 	newRT := kademlia.NewRoutingTable(contact)
 	newKademlia := kademlia.NewKademlia(&contact, newRT)
 
@@ -30,7 +30,7 @@ func main() {
 	for n := 0; n < 20; n++ {
 		portstr := strconv.Itoa(port)
 		randomID := kademlia.NewRandomKademliaID()
-		newC := kademlia.NewContact(randomID, "127.0.0.20"+portstr)
+		newC := kademlia.NewContact(randomID, "172.19.0.3"+portstr)
 		fmt.Println(newC)
 		newRT.AddContact(newC)
 		port++
