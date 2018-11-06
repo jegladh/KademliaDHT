@@ -1,6 +1,8 @@
 package d7024e
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -22,7 +24,7 @@ type Kademlia struct {
 
 type KadChannel struct {
 	Timestamp time.Time
-	kademlia  ContactCandidates
+	Cc        ContactCandidates
 }
 
 //type for closest contacts ish
@@ -89,12 +91,13 @@ func (kademlia *Kademlia) FindNode(target *Contact) []Contact {
 	returnList.Sort()
 	// for loop123
 	//for loop still wrong condition
+
 exit:
 	for true {
 		// snapshot 20 first
 		compareList = returnList.Contacts[:19]
 		replyList := <-replyChan
-		for _, c := range replyList {
+		for _, c := range replyList.Cc.Contacts {
 			returnList.Contacts = append(returnList.Contacts, c)
 		}
 		returnList.Sort()
@@ -119,7 +122,7 @@ exit:
 			break exit
 		}
 		asked.Sort()
-		//Send out more requests and check so no dupe msgs
+		//send out more reqyests and check so no dupe mesg
 		if outboundRequests < 3 && exitBool == true {
 		loop1:
 			for _, i := range resultList {
@@ -176,5 +179,9 @@ func (kademlia *Kademlia) LookupData(hash string) {
 }
 
 func (kademlia *Kademlia) Store(data []byte) {
-	// TODO
+	fmt.Println(data)
+	a := sha1.New()
+	a.Write(data)
+	fmt.Printf("% x", a.Sum(nil))
+
 }

@@ -2,10 +2,12 @@ package d7024e
 
 import (
 	"Kademlia/KademliaDHT/protobuf"
+	"crypto/sha1"
 	"fmt"
 	"net"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -276,17 +278,6 @@ func (network *Network) SendPingMessage(contact *Contact) {
 
 }
 
-// func (network *MockNetwork) SendFindContactMessage(contact *Contact, dest *Contact) []Contact {
-// var a []Contact
-// fmt.Println("I am sending ContatcMsg now")
-// for i := 0; i < 5; i++ {
-// newcontact := NewContact(NewRandomKademliaID(), "localhost")
-// newcontact.CalcDistance(contact.ID)
-// a = append(a, newcontact)
-// }
-// return a
-// }
-
 func (network *Network) SendFindContactMessage(contact *Contact) CloseContacts {
 	ServerAddr, err := net.ResolveUDPAddr("udp", contact.Address) //contact.Address?
 	ErrorHandler(err)
@@ -360,10 +351,12 @@ func (network *Network) callbackFindReply(recMsg *protobuf.KademliaMessageType) 
 	replyChan := network.NetKad.Asdf[recMsg.Callback.Thread] // HÄMTA CHANNEL
 	afs := recMsg.Callback.CoontactList
 	var listan []Contact
+
 	for i := 0; i < len(afs); i++ {
 		listan = append(listan, Contact{ID: NewKademliaID(afs[i].ContactID), Address: afs[i].Address, distance: NewKademliaID(afs[i].Xor)})
 	}
-	whatever := ContactCandidates{listan}
+	skickalistan := ContactCandidates{listan}
+	whatever := KadChannel{time.Now(), skickalistan}
 	// GÖR OM CONTACTS TILL TYPEN ContactCandidates
 	replyChan <- whatever
 }
@@ -399,7 +392,8 @@ func (network *MockNetwork) SendStoreMessage(data []byte) {
 }
 
 func (network *Network) SendStoreMessage(data []byte) {
-	// TODO
-	//if success
-	//kademlia.Store(data)
+	fmt.Println(data)
+	a := sha1.New()
+	a.Write(data)
+	fmt.Printf("% x", a.Sum(nil))
 }
