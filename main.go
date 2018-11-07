@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	kademlia "/home/go/src/Kademlia/KademliaDHT"
+	kademlia "github.com/KademliaDHT/Lab"
 	/*"net"
 	"github.com/tatsushid/go-fastping"
 	"os"
