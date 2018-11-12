@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 
 	kademlia "github.com/KademliaDHT/Lab"
@@ -17,25 +16,25 @@ func main() {
 
 	port := 62001
 	portstr := strconv.Itoa(port)
-	kademlia.Listen("172.19.0.2", port)
+	kademlia.Listen("10.0.0.4", port)
 	kademlia.Ping()
 	randomID := kademlia.NewRandomKademliaID()
-	contact := kademlia.NewContact(randomID, "172.19.0.2"+portstr)
+	contact := kademlia.NewContact(randomID, "10.0.0.4"+portstr)
 	newRT := kademlia.NewRoutingTable(contact)
 	newKademlia := kademlia.NewKademlia(&contact, newRT)
 
 	//testID := kademlia.NewKademliaID("0f")
 	//testContact := kademlia.NewContact(randomID, "localhost:"+portstr)
 
-	for n := 0; n < 20; n++ {
-		portstr := strconv.Itoa(port)
-		randomID := kademlia.NewRandomKademliaID()
-		newC := kademlia.NewContact(randomID, "172.19.0.3"+portstr)
-		fmt.Println(newC)
-		newRT.AddContact(newC)
-		port++
-
-	}
+	// for n := 0; n < 20; n++ {
+	// 	portstr := strconv.Itoa(port)
+	// 	randomID := kademlia.NewRandomKademliaID()
+	// 	newC := kademlia.NewContact(randomID, "172.19.0.3"+portstr)
+	// 	fmt.Println(newC)
+	// 	newRT.AddContact(newC)
+	// 	port++
+	//
+	// }
 	//newKademlia.LookupData(&contact)
 	newKademlia.LookupContact(&contact)
 	//fmt.Println(&contact)

@@ -51,11 +51,11 @@ func Listen(ip string, port int) {
 
 //http://130.240.110.178:8000/
 func Ping() {
-	ServerAddr, err := net.ResolveUDPAddr("udp", "172.19.0.2:62001")
+	ServerAddr, err := net.ResolveUDPAddr("udp", "10.0.0.5:62001")
 	ErrorHandler(err)
-	LocalAddr, err := net.ResolveUDPAddr("udp", "172.19.0.3:62001")
-	ErrorHandler(err)
-	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
+	//LocalAddr, err := net.ResolveUDPAddr("udp", "172.19.0.3:62001")
+	//ErrorHandler(err)
+	Conn, err := net.DialUDP("udp", nil, ServerAddr)
 	ErrorHandler(err)
 	defer Conn.Close()
 	i := 0
