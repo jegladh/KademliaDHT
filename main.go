@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"strconv"
 
 	kademlia "github.com/KademliaDHT/Lab"
@@ -18,10 +17,11 @@ func main() {
 	port := 62001
 	portstr := strconv.Itoa(port)
 	//os.Setenv("VAR", "10.0.0.4")
-	kademlia.Listen(os.Getenv("NODE1"), port)
+	//kademlia.Listen(os.Getenv("NODE1"), port)
+	kademlia.Listen("10.0.0.4", port)
 	kademlia.Ping()
 	randomID := kademlia.NewRandomKademliaID()
-	contact := kademlia.NewContact(randomID, os.Getenv("NODE1")+portstr)
+	contact := kademlia.NewContact(randomID, "10.0.0.4"+portstr)
 	newRT := kademlia.NewRoutingTable(contact)
 	newKademlia := kademlia.NewKademlia(&contact, newRT)
 
