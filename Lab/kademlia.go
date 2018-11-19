@@ -102,18 +102,20 @@ exit:
 		}
 		returnList.Sort()
 
+		//compare counter used for checking if 3 nodes in row are "the best nodes already"
 		compareCounter := 0
 		for i := 0; i < len(returnList.Contacts); i++ {
 			if compareList[i] == returnList.Contacts[i] {
 				compareCounter++
 			}
 		}
+		//if return[i] is same as comparelist we increase exit counter
 		if compareCounter == k {
 			exitCounter++
 		} else {
 			exitCounter = 0
 		}
-
+		//3 same nodes in row = exit time = send out 20 msgs, no more
 		if exitCounter == 3 {
 			for _, i := range resultList {
 				kademlia.Net.SendFindContactMessage(&i)
@@ -137,45 +139,41 @@ exit:
 	}
 	// end loop123
 	returnList.Sort()
-	return returnList.Contacts[0:19]
+	//return returnList.Contacts[0:19]
+	return returnList.Contacts[:k]
 
 }
 
-// for i := 0; i < 3; i++ {
-// 	network.SendFindContactMessage(resultList[i], target)
-// 	outboundRequests++
-// 	asked = append(asked, resultList[i])
-// }
-// WAIT FOR REPLIES
-// outboundRequests--
-// ADD REPLY CONTACTLIST TO RESULTLIST AND SORT
-// for _, i := range responseList {
-// 	resultList = append(resultList, i)
-// }
-// resultList.Sort()
+ func (kademlia *Kademlia) LookupContact(target *Contact) *Contact{
+ 	cc := kademlia.RT.FindClosestContacts(target.ID, alpha)
+ 	result := kademlia.FindNode(target)
+	 for i:=0;i < len(cc); i++  {
+	 	if cc[i].ID == target.ID{
+	 		return &(cc[i])
+		}
 
-// CHEKC FOR EXIT Cond
+	 }
+	 kademlia.wait.Add(alpha)
+	 resultContact := &Contact{}
+	 for i:=0;i<alpha ;i++  {
+		 go kademlia.Net.SendFindContactMessage(&cc[i])
+	 }
 
-// if outboundRequests < 3 {
-//loop1:
-// for _, i := range (resultList) {
-// 	if i not in asked {
-// 		// Send request
-// 		outboundRequests++
-//break loop1
-// 	}
-// }
-// }
-//
 
-// After loop SORT then return
+ }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) {
-	// TODO
-}
+func (kademlia *Kademlia) LookupData(hash string) *[]byte {
+	closeC := kademlia.RT.FindClosestContacts(NewKademliaID(hash), alpha)
+	resultdata1 := []byte("")
+	kademlia.wait.Add(alpha)
+	for i := 0; i < alpha; i++ {
+		go kademlia.Net.SendFindDataMessage(hash, kademlia.FindNode(*closeC.Contact[i]))
 
-func (kademlia *Kademlia) LookupData(hash string) {
-	// TODO
+	}
+
+	kademlia.wait.Wait()
+	//fmt.Println(resultdata1)
+	return &resultdata1
 }
 
 func (kademlia *Kademlia) Store(data []byte) {

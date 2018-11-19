@@ -377,7 +377,7 @@ func (network *Network) callbackFindReply(recMsg *protobuf.KademliaMessageType) 
 // }
 // return &newdata, s
 
-func (network *Network) SendFindDataMessage(hash string) {
+func (network *Network) SendFindDataMessage(hash string, contacts []Contact) bool{
 	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
 	ErrorHandler(err)
 	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
@@ -386,14 +386,32 @@ func (network *Network) SendFindDataMessage(hash string) {
 	ErrorHandler(err)
 	defer Conn.Close()
 
+	msg := network.newRequestMessage()
+	mID := network.getMessageID()
+
+	msg.Call = &protobuf.KademliaMessageCall{
+		Id:            mid,
+		Type:          protobuf.KademliaMessageCall_FINDDATA,
+		MessageString: fmt.Sprint(hash),
+		Info:          "",
+	}
+
+
 }
 func (network *MockNetwork) SendStoreMessage(data []byte) {
 	//TODO
 }
 
 func (network *Network) SendStoreMessage(data []byte) {
+	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
+	ErrorHandler(err)
+	Conn, err := net.DialUDP("udp", nil, ServerAddr)
+	ErrorHandler(err)
+	defer Conn.Close()
+
 	fmt.Println(data)
 	a := sha1.New()
 	a.Write(data)
 	fmt.Printf("% x", a.Sum(nil))
+
 }
