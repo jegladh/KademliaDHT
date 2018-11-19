@@ -14,7 +14,7 @@ var port int
 
 func main() {
 
-	port := 62001
+	port := 32768
 	portstr := strconv.Itoa(port)
 	//os.Setenv("VAR", "10.0.0.4")
 	//kademlia.Listen(os.Getenv("NODE1"), port)
