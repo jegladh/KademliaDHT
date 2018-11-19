@@ -16,9 +16,8 @@ func main() {
 
 	port := 32768
 	portstr := strconv.Itoa(port)
-	//os.Setenv("VAR", "10.0.0.4")
-	//kademlia.Listen(os.Getenv("NODE1"), port)
-	//kademlia.Listen("10.0.0.5", port)
+	//First only Listen. Then only ping.
+	kademlia.Listen("10.0.0.5", port)
 	kademlia.Ping()
 	randomID := kademlia.NewRandomKademliaID()
 	contact := kademlia.NewContact(randomID, "10.0.0.5"+portstr)
