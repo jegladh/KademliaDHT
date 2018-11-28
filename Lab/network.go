@@ -1,26 +1,29 @@
 package d7024e
 
 import (
+	protoMsg "Kademlia/KademliaDHT/protobuf"
 	"fmt"
+	protobuf "github.com/golang/protobuf/proto"
 	"net"
 	"os"
-	"strconv"
-	"time"
+	"sync"
 )
 
 type Network struct {
-	//nodeid int
-	//source string
-	//port   int
+	Contact *Contact
+	RT 		*RoutingTable
+	Lock	*sync.Mutex
+	NetKad	*Kademlia
+
+
 }
-type MockNetwork struct {
-}
-type neetwork interface {
-	SendFindContactMessage(contact *Contact, dest *Contact) []Contact
-	SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte)
-	SendStoreMessage(data []byte)
-	//LookupContact()
-	//LookupContactThreads()
+
+func NewNetwork(contact *Contact, rt *RoutingTable, kademlia *Kademlia) Network{
+	network := Network{}
+	network.Contact = contact
+	network.RT = rt
+	network.NetKad = kademlia
+	return network
 }
 
 func ErrorHandler(err error) {
@@ -30,61 +33,74 @@ func ErrorHandler(err error) {
 	}
 }
 
-func Listen(ip string, port int) {
-	/*convert port to string*/
-	portstr := strconv.Itoa(port)
-	/**/
-	serveraddr, err := net.ResolveUDPAddr("udp", ip+":"+portstr)
+//used for packing down and sending messages
+func marshaller(address string, message *protoMsg.Message){
+	buff, err := protobuf.Marshal(message)
 	ErrorHandler(err)
-	/*listen at port*/
+	Conn, err := net.Dial("udp", address)
+	ErrorHandler(err)
+	_, err = Conn.Write(buff)
+	ErrorHandler(err)
+	Conn.Close()
+}
+
+func Listen(network *Network)(server Contact, port int) {
+	serveraddr, err := net.ResolveUDPAddr("udp", server.Address)
+	ErrorHandler(err)
 	listener, err := net.ListenUDP("udp", serveraddr)
 	ErrorHandler(err)
 	defer listener.Close()
-	fmt.Println("Listening on " + ip + ":" + portstr)
+
+	fmt.Println("Listening on ", server.Address )
 	buf := make([]byte, 1024)
 	for {
 		n, conn, err := listener.ReadFromUDP(buf)
 		fmt.Println("Received ", string(buf[0:n]), " from ", conn)
+
 		ErrorHandler(err)
-	}
-}
+		recMessage := &protoMsg.Message{}
+		error := protobuf.Unmarshal(buf[:n], recMessage)
 
-//http://130.240.110.178:8000/
-func Ping() {
-	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
-	ErrorHandler(err)
-	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
-	ErrorHandler(err)
-	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
-	ErrorHandler(err)
-	defer Conn.Close()
-	i := 0
-	for {
-		msg := strconv.Itoa(i)
-		i++
-		buf := []byte(msg)
-		_, err := Conn.Write(buf)
-		if err != nil {
-			fmt.Println(msg, err)
+		switch recMessage.GetType() {
+		//när man får en ping
+		case "ping":
+			fmt.Println("Hello from", recMessage.GetSenderAddress())
+			answer := network.SendPongMessage(network.Contact)
+			marshaller(recMessage.GetSenderAddress(), answer)
+		//när man får en pong
+		case "pong":
+			fmt.Println("Pong")
+		default:
+			fmt.Println("Error in switch")
 		}
-		time.Sleep(time.Second * 1)
+
 	}
 }
+func (network *Network) Ping(contact *Contact){
 
-func (network *Network) SendPingMessage(contact *Contact) {
-	// TODO
 }
 
-func (network *MockNetwork) SendFindContactMessage(contact *Contact, dest *Contact) []Contact {
-	var a []Contact
-	fmt.Println("I am sending ContatcMsg now")
-	for i := 0; i < 5; i++ {
-		newcontact := NewContact(NewRandomKademliaID(), "localhost")
-		newcontact.CalcDistance(contact.ID)
-		a = append(a, newcontact)
+func (network *Network) SendPingMessage(contact *Contact){
+
+	msg := &protoMsg.Message{
+		SenderID:    	network.Contact.ID.String(),//proto.String(input[0]),
+		SenderAddress: 	network.Contact.Address,//proto.String(input[1]),
+		Type:     		"ping",//proto.String(input[2]),
+		}
+
+	marshaller(contact.Address, msg)
+}
+
+func (network *Network) SendPongMessage(contact *Contact) *protoMsg.Message{
+	msg := &protoMsg.Message{
+		SenderID:		network.Contact.ID.String(),
+		SenderAddress:	network.Contact.Address,
+		Type:			"pong",
+
 	}
-	return a
+	return msg
 }
+
 
 func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) {
 	// TODO
@@ -92,29 +108,11 @@ func (network *Network) SendFindContactMessage(contact *Contact, dest *Contact) 
 	//kademlia.LookupContact()
 }
 
-func (network *MockNetwork) SendFindDataMessage(hash string, contact *Contact) (*Contacts, []byte) {
-	fmt.Println("I am sending DataMsg now")
-	/*if hash == "FFFF" && contact.ID.String() == "rwdfvwsv" {
-	return _, _
-	*/
-	return nil, nil
-}
-
-// var s []byte
-// fmt.Println(" I am sending DataMsg now")
-// for i := 0; i < 5; i++ {
-// 	*newdata := NewContact(NewRandomKademliaID(), "localhost")
-//
-// }
-// return &newdata, s
 
 func (network *Network) SendFindDataMessage(hash string) {
 	// TODO
 	//if success
 	//kademlia.LookupData()
-}
-func (network *MockNetwork) SendStoreMessage(data []byte) {
-	//TODO
 }
 
 func (network *Network) SendStoreMessage(data []byte) {

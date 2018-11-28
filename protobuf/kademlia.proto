@@ -1,0 +1,10 @@
+syntax = "proto3";
+package protobuf;
+
+message message{
+    string senderID = 1;
+    string senderAddress = 2; 
+    string type = 3;
+    string recieverID = 4;
+    string recieverAddress = 5;
+}
