@@ -2,6 +2,7 @@ package d7024e
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"sync"
 	"time"
@@ -20,6 +21,12 @@ type Kademlia struct {
 	wait            *sync.WaitGroup
 	Asdf            map[int32]chan (KadChannel)
 	FindNodeCounter int32
+	Lock 			*sync.Mutex
+	files 			[]File
+}
+type File struct {
+	Hash string
+	Value []byte
 }
 
 type KadChannel struct {
@@ -30,6 +37,7 @@ type KadChannel struct {
 //type for closest contacts ish
 type Contacts []Contact
 
+
 func NewKademlia(me *Contact, rt *RoutingTable) *Kademlia {
 	kademlia := new(Kademlia)
 	kademlia.RT = rt
@@ -37,6 +45,7 @@ func NewKademlia(me *Contact, rt *RoutingTable) *Kademlia {
 	kademlia.Asdf = make(map[int32]chan (KadChannel))
 
 	kademlia.FindNodeCounter = 1
+	kademlia.files = []File{}
 	return kademlia
 }
 
@@ -66,8 +75,10 @@ func checkAskedNodes(contact Contact, asked []Contact) bool {
 }
 
 func (kademlia *Kademlia) FindNode(target *Contact) []Contact {
-
+	kademlia.Lock.Lock()
 	resultList := kademlia.RT.FindClosestContacts(target.ID, alpha)
+	kademlia.Lock.Unlock()
+	fmt.Println(resultList)
 	returnList := ContactCandidates{resultList}
 	asked := ContactCandidates{}
 	compareList := make([]Contact, 20)
@@ -79,23 +90,28 @@ func (kademlia *Kademlia) FindNode(target *Contact) []Contact {
 
 	exitCounter := 0
 	exitBool := false
-
-	kademlia.wait.Add(alpha)
+	fmt.Println("first step")
+	//kademlia.wait.Add(alpha)
 	//first alpha requests
 	for i := 0; i < alpha; i++ {
-		kademlia.Net.SendFindContactMessage(&resultList[i])
+		fmt.Println("Second step")
+		fmt.Println(&resultList[i])
+		go kademlia.Net.SendFindContactMessage(&resultList[i])
 		outboundRequests++
 		asked.Contacts = append(asked.Contacts, resultList[i])
+		fmt.Println("third step")
 	}
-	kademlia.wait.Wait()
+	//kademlia.wait.Wait()
+
 	returnList.Sort()
+	fmt.Println(returnList)
 	// for loop123
 	//for loop still wrong condition
 
 exit:
 	for true {
 		// snapshot 20 first
-		compareList = returnList.Contacts[:19]
+		compareList = returnList.Contacts[:5]
 		replyList := <-replyChan
 		for _, c := range replyList.Cc.Contacts {
 			returnList.Contacts = append(returnList.Contacts, c)
@@ -117,6 +133,7 @@ exit:
 		}
 		//3 same nodes in row = exit time = send out 20 msgs, no more
 		if exitCounter == 3 {
+			exitBool = true
 			for _, i := range resultList {
 				kademlia.Net.SendFindContactMessage(&i)
 
@@ -139,12 +156,15 @@ exit:
 	}
 	// end loop123
 	returnList.Sort()
+	fmt.Println(returnList)
+	fmt.Println("Hej hopp")
 	//return returnList.Contacts[0:19]
 	return returnList.Contacts[:k]
 
 }
 
- func (kademlia *Kademlia) LookupContact(target *Contact) *Contact{
+
+/* func (kademlia *Kademlia) LookupContact(target *Contact) *Contact{
  	cc := kademlia.RT.FindClosestContacts(target.ID, alpha)
  	result := kademlia.FindNode(target)
 	 for i:=0;i < len(cc); i++  {
@@ -158,16 +178,15 @@ exit:
 	 for i:=0;i<alpha ;i++  {
 		 go kademlia.Net.SendFindContactMessage(&cc[i])
 	 }
-
-
- }
+	 return nil
+ }*/
 
 func (kademlia *Kademlia) LookupData(hash string) *[]byte {
 	closeC := kademlia.RT.FindClosestContacts(NewKademliaID(hash), alpha)
 	resultdata1 := []byte("")
 	kademlia.wait.Add(alpha)
 	for i := 0; i < alpha; i++ {
-		go kademlia.Net.SendFindDataMessage(hash, kademlia.FindNode(*closeC.Contact[i]))
+		go kademlia.Net.SendFindDataMessage(hash, kademlia.FindNode(&closeC[i]))
 
 	}
 
@@ -175,11 +194,27 @@ func (kademlia *Kademlia) LookupData(hash string) *[]byte {
 	//fmt.Println(resultdata1)
 	return &resultdata1
 }
+func Hasher(data []byte) string{
+	hashData := sha1.Sum(data)
+	hashedVal := hex.EncodeToString(hashData[0:IDLength])
+	return  hashedVal
+}
 
 func (kademlia *Kademlia) Store(data []byte) {
-	fmt.Println(data)
-	a := sha1.New()
-	a.Write(data)
-	fmt.Printf("% x", a.Sum(nil))
+	//fmt.Println(data)
+	hashedData := Hasher(data)
+	kademlia.Lock.Lock()
+	defer kademlia.Lock.Unlock()
+	for  _, file := range kademlia.files{
+		if file.Hash == hashedData{
+			fmt.Println("File already exists")
+			return
+		}
+	}
+	file := File{hashedData, data}
+	kademlia.files = append(kademlia.files, file)
 
+}
+func (kademlia *Kademlia) SendStore(hash string, value []byte){
+	//cc
 }

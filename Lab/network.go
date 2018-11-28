@@ -103,8 +103,10 @@ func NewNetwork(address string, port string, kad *Kademlia) Network {
 
 func (network *Network) getMessageID() int32 {
 	network.Lock.Lock()
-	ID := network.Mid
-	network.Mid++
+	//ID := network.Mid
+	//network.Mid++
+	var ID int32 = 1
+
 	network.Lock.Unlock()
 	return ID
 }
@@ -143,6 +145,8 @@ func (network *Network) Listen() {
 			switch receivedMsg.Callback.Type {
 			case protobuf.KademliaMessageCallBack_FINDC:
 				go network.callbackFindReply(receivedMsg)
+			case protobuf.KademliaMessageCallBack_PING:
+				go network.callbackPingMessage(*receivedMsg)
 				break
 
 			default:
@@ -156,6 +160,7 @@ func (network *Network) Listen() {
 				go network.callbackPingMessage(*receivedMsg)
 				break
 			case protobuf.KademliaMessageCall_FINDC:
+				fmt.Println("Nu då?")
 				go network.callbackFindContactMessage(*receivedMsg)
 			default:
 				fmt.Println("Error")
@@ -202,9 +207,14 @@ func (network *Network) newMessage(typ protobuf.KademliaMessageType_Type) protob
 	var msg protobuf.KademliaMessageType = protobuf.KademliaMessageType{}
 
 	msg.Type = typ
+	fmt.Println("In newMessage")
+	fmt.Println(typ)
+	//fmt.Println(network.NetKad.RT.me.ID.String())
 	var me protobuf.Contact = protobuf.Contact{
-		ContactID: network.NetKad.RT.me.ID.String(),
-		Address:   network.Address + ":" + network.Port}
+		ContactID : fmt.Sprint(network.NetKad.RT.me.ID),
+		Address: network.Address + ":" + network.Port,
+		Xor: "",
+	}
 
 	msg.SenderC = &me
 	return msg
@@ -233,6 +243,7 @@ func (network *Network) callbackPingMessage(receivedMsg protobuf.KademliaMessage
 		Contacts: nil,
 		Info:     "Hello",
 	}
+	//network.NetKad.RT.AddContact(*receivedMsg.SenderC)
 	msg.Callback = &ping
 	fmt.Println(ping)
 
@@ -256,14 +267,15 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	defer Conn.Close()
 
 	var msg protobuf.KademliaMessageType = network.newRequestMessage()
-	mid := network.getMessageID()
+	//mid := network.getMessageID()
 	ping := protobuf.KademliaMessageCall{
-		Id:            mid,
+		Id:            1,
 		Type:          protobuf.KademliaMessageCall_PING,
 		MessageString: "Ping",
 		Info:          "",
 	}
 	msg.Call = &ping
+	network.NetKad.RT.AddContact(*contact)
 
 	var buff []byte
 	//fmt.Println(&msg)
@@ -277,6 +289,7 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	}
 
 }
+//missing target?
 
 func (network *Network) SendFindContactMessage(contact *Contact) CloseContacts {
 	ServerAddr, err := net.ResolveUDPAddr("udp", contact.Address) //contact.Address?
@@ -288,12 +301,15 @@ func (network *Network) SendFindContactMessage(contact *Contact) CloseContacts {
 	defer Conn.Close()
 
 	var msg protobuf.KademliaMessageType = network.newRequestMessage()
-	var mid int32 = network.getMessageID()
+	fmt.Println(msg)
+	//var mid int32 = network.getMessageID()
 	msg.Call = &protobuf.KademliaMessageCall{
-		Id:            mid,
+		Id:            1,
 		Type:          protobuf.KademliaMessageCall_FINDC,
 		MessageString: fmt.Sprint(contact),
 		Info:          "",
+		Thread:			1,
+
 	}
 	var buff []byte
 	buff, err = proto.Marshal(&msg)
@@ -340,11 +356,11 @@ func (network *Network) callbackFindContactMessage(receievedMsg protobuf.Kademli
 
 	ServerAddr, err := net.ResolveUDPAddr("udp", receievedMsg.SenderC.Address) //contact.Address?
 	ErrorHandler(err)
-	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
+	//LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
 	ErrorHandler(err)
-	Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
+	Conn, err := net.DialUDP("udp", nil, ServerAddr)
 	ErrorHandler(err)
-	defer Conn.Close()
+	Conn.Close()
 }
 
 func (network *Network) callbackFindReply(recMsg *protobuf.KademliaMessageType) {
@@ -387,20 +403,19 @@ func (network *Network) SendFindDataMessage(hash string, contacts []Contact) boo
 	defer Conn.Close()
 
 	msg := network.newRequestMessage()
-	mID := network.getMessageID()
+	//mid := network.getMessageID()
 
 	msg.Call = &protobuf.KademliaMessageCall{
-		Id:            mid,
+		Id:            1,
 		Type:          protobuf.KademliaMessageCall_FINDDATA,
 		MessageString: fmt.Sprint(hash),
 		Info:          "",
 	}
+	return false
 
 
 }
-func (network *MockNetwork) SendStoreMessage(data []byte) {
-	//TODO
-}
+
 
 func (network *Network) SendStoreMessage(data []byte) {
 	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")

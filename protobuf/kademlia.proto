@@ -18,6 +18,8 @@ message KademliaMessageCall {
   enum Type{
       PING = 0;
       FINDC = 1;
+      FINDDATA = 2;
+      STORE = 3;
   }
       int32 id = 1;
       Type type = 2;
@@ -29,6 +31,8 @@ message KademliaMessageCallBack {
   enum Type{
       PING = 0;
       FINDC = 1;
+      FINDDATA = 2;
+      STORE = 3;
   }
       int32 id = 1;
       Type type = 2;

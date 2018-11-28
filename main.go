@@ -2,7 +2,11 @@ package main
 
 import (
 	kademlia "Kademlia/KademliaDHT/Lab"
-	//	"strconv"
+	"fmt"
+	"sync"
+	"time"
+
+	"strconv"
 	/*"net"
 	"github.com/tatsushid/go-fastping"
 	"os"
@@ -11,36 +15,54 @@ import (
 
 func main() {
 
-	net := new(kademlia.Network)
-	net.NetKad.Store([]byte{1})
+	////net := new(kademlia.Network)
+	////net.NetKad.Store([]byte{1})
+	//randomID := kademlia.NewRandomKademliaID()
+	//contact := kademlia.NewContact(randomID, "localhost:"+"8000")
+	//contact2 := kademlia.NewContact(kademlia.NewRandomKademliaID(), "localhost"+"8003")
+	//rt := kademlia.NewRoutingTable(contact)
+	//rt.AddContact(kademlia.NewContact(kademlia.NewRandomKademliaID(), "localhost:8002"))
+	//
+	//kad := kademlia.NewKademlia(&contact, rt)
+	////net.Listen()
+	//<-time.After(time.Second * 1)
+	//kad.FindNode(&contact2)
+	////	net.Listen()
+	//// fmt.Println("Starting server")
+	//// //net.Listen()
+
 	randomID := kademlia.NewRandomKademliaID()
 	contact := kademlia.NewContact(randomID, "localhost:"+"8000")
-	contact2 := kademlia.NewContact(kademlia.NewRandomKademliaID(), "localhost"+"8003")
+	//contact2 := kademlia.NewContact(kademlia.NewRandomKademliaID(), "localhost"+"8003")
 	rt := kademlia.NewRoutingTable(contact)
-	rt.AddContact(kademlia.NewContact(kademlia.NewRandomKademliaID(), "localhost:8002"))
-
 	kad := kademlia.NewKademlia(&contact, rt)
-	//net.Listen()
-	kad.FindNode(&contact2)
-	//	net.Listen()
-	// fmt.Println("Starting server")
-	// //net.Listen()
-	//
-	// randomID := kademlia.NewRandomKademliaID()
-	// contact := kademlia.NewContact(randomID, "localhost:"+"8000")
-	// rt := kademlia.NewRoutingTable(contact)
-	// kad := kademlia.NewKademlia(&contact, rt)
-	// net := kademlia.Network{
-	// 	Address: "localhost",
-	// 	Port:    "8000",
-	// 	Mid:     123,
-	// 	NetKad:  kad,
-	// 	Lock:    &sync.Mutex{},
-	// }
-	// go net.Listen()
-	// <-time.After(time.Second * 1)
-	// net.SendFindContactMessage(&contact)
-	// <-time.After(time.Second * 1)
+
+	for i:=0 ; i<100; i++  {
+		port := 8004 + i
+		portstr := strconv.Itoa(port)
+		rt.AddContact(kademlia.NewContact(kademlia.NewRandomKademliaID(), "localhost:" + portstr))
+
+	}
+
+	mailBoxbool := false
+	net := kademlia.Network{
+		Address: "localhost",
+		Port:    "8000",
+		Mid:     123,
+		NetKad:  kad,
+		Lock:    &sync.Mutex{},
+		AnsList:     nil,
+		NetworkLock: nil,
+		MailinBox:   &mailBoxbool,
+	}
+	fmt.Println(kad)
+	go net.Listen()
+	<-time.After(time.Second * 1)
+	fmt.Println(contact.ID)
+	go kad.FindNode(&contact)
+	<-time.After(time.Second * 2)
+	//go net.SendPingMessage(&contact)
+	//fmt.Println(hej)
 
 	/*port := 8000
 	portstr := strconv.Itoa(port)
