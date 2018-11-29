@@ -1,13 +1,14 @@
 package d7024e
 
 import (
-	"Kademlia/KademliaDHT/protobuf"
 	"crypto/sha1"
 	"fmt"
 	"net"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/KademliaDHT/protobuf"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -233,6 +234,7 @@ func (network *Network) callbackPingMessage(receivedMsg protobuf.KademliaMessage
 		Contacts: nil,
 		Info:     "Hello",
 	}
+
 	msg.Callback = &ping
 	fmt.Println(ping)
 
@@ -240,6 +242,8 @@ func (network *Network) callbackPingMessage(receivedMsg protobuf.KademliaMessage
 	var buff []byte
 	buff, err = proto.Marshal(&msg)
 	ErrorHandler(err)
+
+	network.NetKad.RT.AddContact(receivedMsg.SenderC)
 
 	_, err = Conn.Write(buff)
 	if err != nil {
@@ -377,7 +381,7 @@ func (network *Network) callbackFindReply(recMsg *protobuf.KademliaMessageType) 
 // }
 // return &newdata, s
 
-func (network *Network) SendFindDataMessage(hash string, contacts []Contact) bool{
+func (network *Network) SendFindDataMessage(hash string, contacts []Contact) bool {
 	ServerAddr, err := net.ResolveUDPAddr("udp", "localhost:8000")
 	ErrorHandler(err)
 	LocalAddr, err := net.ResolveUDPAddr("udp", "localhost:0")
@@ -390,12 +394,12 @@ func (network *Network) SendFindDataMessage(hash string, contacts []Contact) boo
 	mID := network.getMessageID()
 
 	msg.Call = &protobuf.KademliaMessageCall{
-		Id:            mid,
-		Type:          protobuf.KademliaMessageCall_FINDDATA,
+		Id:            mID,
+		Type:          protobuf.KademliaMessageCall_FINDC,
 		MessageString: fmt.Sprint(hash),
 		Info:          "",
 	}
-
+	return false
 
 }
 func (network *MockNetwork) SendStoreMessage(data []byte) {

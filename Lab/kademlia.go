@@ -144,30 +144,29 @@ exit:
 
 }
 
- func (kademlia *Kademlia) LookupContact(target *Contact) *Contact{
- 	cc := kademlia.RT.FindClosestContacts(target.ID, alpha)
- 	result := kademlia.FindNode(target)
-	 for i:=0;i < len(cc); i++  {
-	 	if cc[i].ID == target.ID{
-	 		return &(cc[i])
+func (kademlia *Kademlia) LookupContact(target *Contact) *Contact {
+	cc := kademlia.RT.FindClosestContacts(target.ID, alpha)
+	result := kademlia.FindNode(target)
+	for i := 0; i < len(cc); i++ {
+		if cc[i].ID == target.ID {
+			return &(cc[i])
 		}
 
-	 }
-	 kademlia.wait.Add(alpha)
-	 resultContact := &Contact{}
-	 for i:=0;i<alpha ;i++  {
-		 go kademlia.Net.SendFindContactMessage(&cc[i])
-	 }
-
-
- }
+	}
+	kademlia.wait.Add(alpha)
+	resultContact := &Contact{}
+	for i := 0; i < alpha; i++ {
+		go kademlia.Net.SendFindContactMessage(&cc[i])
+	}
+	return nil
+}
 
 func (kademlia *Kademlia) LookupData(hash string) *[]byte {
 	closeC := kademlia.RT.FindClosestContacts(NewKademliaID(hash), alpha)
 	resultdata1 := []byte("")
 	kademlia.wait.Add(alpha)
 	for i := 0; i < alpha; i++ {
-		go kademlia.Net.SendFindDataMessage(hash, kademlia.FindNode(*closeC.Contact[i]))
+		//		go kademlia.Net.SendFindDataMessage(hash, kademlia.FindNode(*closeC.Contact[i]))
 
 	}
 
