@@ -11,10 +11,23 @@ const (
 	port          = "8001"
 )
 
+//Varje node måste kolla om den är bootstrap noden.
+//NOT SURE IF NEED THIS PART? Since we hardcode bootstrap address and its KAD ID
+// func HowAmI(ip, port) target *Contact {
+// 		if ip == bootstrapAddr {
+// 			println("Im the bootstrap node")
+// 			return NewContact(NewKademliaID(bootstrapID), bootstrapAddr + ": " + bootstrapPort)
+// 		} else {
+// 			kid := NewRandomKademliaID()
+// 			return NewContact(kid, ip + ":" + port)
+// 		}
+// }
+
 func Bootstrap(kademlia *Kademlia, target *Contact) {
 	bsNode := NewContact(NewKademliaID(bootstrapID), bootstrapAddr+":"+bootstrapPort)
 
-	//Connecta restrerande noder till bootstrap nätverket -> GÖRS MED LOOKUPC
+	//Connecta restrerande noder till bootstrap nätverket -> GÖRS MED LOOKUPC (i LOOKUPC?)
+
 	res := kademlia.FindNode(&bsNode) //ger list [0:19] närmaste kontakter, sparar listan i variablen res
 	//loopa igenom res för att lägga till alla kontakerna från listan.
 	for i := 0; i < len(res); i++ {
