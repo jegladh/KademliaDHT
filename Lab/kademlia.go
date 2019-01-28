@@ -13,6 +13,7 @@ type Kademlia struct {
 
 }
 
+
 //type for closest contacts ish
 type Contacts []Contact
 

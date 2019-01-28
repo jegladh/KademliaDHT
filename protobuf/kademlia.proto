@@ -7,4 +7,7 @@ message message{
     string type = 3;
     string recieverID = 4;
     string recieverAddress = 5;
+    int32  mID = 6;
+
 }
+//protoc --go_out=. *.proto
